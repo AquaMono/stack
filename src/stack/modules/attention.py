@@ -73,7 +73,13 @@ class TabularAttentionLayer(nn.Module):
         super().__init__()
 
         cell_attn_dim = token_dim
-        self.cell_attn = MultiHeadAttention(cell_attn_dim, 8, dropout)
+        cell_attn_heads = n_heads
+        # Ensure cell attention uses a valid head count even for tiny token_dim (e.g., tests).
+        if cell_attn_dim % cell_attn_heads != 0:
+            cell_attn_heads = max(1, min(n_heads, cell_attn_dim))
+            if cell_attn_dim % cell_attn_heads != 0:
+                cell_attn_heads = 1
+        self.cell_attn = MultiHeadAttention(cell_attn_dim, cell_attn_heads, dropout)
         self.cell_norm = nn.LayerNorm(cell_attn_dim)
 
         gene_attn_dim = n_hidden * token_dim
